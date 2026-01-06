@@ -7,18 +7,18 @@ interface LandingProps {
 export default function Landing({ onNavigate }: LandingProps) {
   return (
     <div
-      className="min-h-screen pt-20 relative overflow-hidden"
+      className="min-h-screen pt-20 relative overflow-hidden bg-black"
       style={{
-        backgroundImage: `url(${import.meta.env.BASE_URL}bg-grid.png)`,
+        backgroundImage: `
+          linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)),
+          url(${import.meta.env.BASE_URL}bg-grid.png)
+        `,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
       }}
     >
-      {/* Dark overlay for readability */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-
-      {/* Page content */}
+      {/* Content wrapper */}
       <div className="relative z-10">
         <section className="max-w-5xl mx-auto px-6 py-24 text-center">
           <h1 className="text-6xl font-bold text-white mb-6 leading-tight">
