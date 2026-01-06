@@ -9,7 +9,7 @@ export default function Landing({ onNavigate }: LandingProps) {
     <div
       className="min-h-screen pt-20 relative overflow-hidden"
       style={{
-        backgroundImage: "url('/bg-grid.png')",
+        backgroundImage: `url(${import.meta.env.BASE_URL}bg-grid.png)`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
