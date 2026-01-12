@@ -13,6 +13,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     // Check for error parameters in URL hash (from email links)
@@ -47,6 +48,11 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleMemoryCreated = () => {
+    // Trigger refresh of memories list
+    setRefreshKey(prev => prev + 1);
+  };
+
   const handleAuthSuccess = () => {
     // Redirect to home after successful login
     handleNavigate('home');
@@ -75,8 +81,8 @@ function App() {
       />
 
       {currentPage === 'home' && <Landing onNavigate={handleNavigate} />}
-      {currentPage === 'memories' && <Memories onNavigate={handleNavigate} />}
-      {currentPage === 'add' && <AddMemory onNavigate={handleNavigate} />}
+      {currentPage === 'memories' && <Memories onNavigate={handleNavigate} user={user} refreshKey={refreshKey} />}
+      {currentPage === 'add' && <AddMemory onNavigate={handleNavigate} user={user} onMemoryCreated={handleMemoryCreated} />}
       {currentPage === 'login' && <Login onAuthSuccess={handleAuthSuccess} />}
     </div>
   );
