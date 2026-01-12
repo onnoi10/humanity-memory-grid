@@ -31,18 +31,20 @@ const transformMemoryToDbRow = (memory: Omit<Memory, 'id' | 'timestamp' | 'dateA
   };
 };
 
-export const loadMemories = async (userId: string | null = null): Promise<Memory[]> => {
+/**
+ * Load public memories - no authentication required
+ * Query: SELECT * FROM memories WHERE visibility = 'public' ORDER BY timestamp DESC
+ */
+export const loadPublicMemories = async (): Promise<Memory[]> => {
   try {
-    // Supabase RLS policies will automatically filter:
-    // - Public memories are visible to everyone (including anonymous users)
-    // - Private memories are only visible to authenticated users who own them
     const { data, error } = await supabase
       .from('memories')
       .select('*')
+      .eq('visibility', 'public')
       .order('timestamp', { ascending: false });
 
     if (error) {
-      console.error('Failed to load memories:', error);
+      console.error('Failed to load public memories:', error);
       return [];
     }
 
@@ -50,6 +52,61 @@ export const loadMemories = async (userId: string | null = null): Promise<Memory
 
     // Transform database rows to Memory interface
     return data.map(transformDbRowToMemory);
+  } catch (error) {
+    console.error('Failed to load public memories:', error);
+    return [];
+  }
+};
+
+/**
+ * Load private memories for authenticated user
+ * Query: SELECT * FROM memories WHERE visibility = 'private' AND user_id = $userId ORDER BY timestamp DESC
+ * Requires: User must be authenticated
+ */
+export const loadPrivateMemories = async (userId: string): Promise<Memory[]> => {
+  try {
+    if (!userId) {
+      console.warn('Cannot load private memories: user ID is required');
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('memories')
+      .select('*')
+      .eq('visibility', 'private')
+      .eq('user_id', userId)
+      .order('timestamp', { ascending: false });
+
+    if (error) {
+      console.error('Failed to load private memories:', error);
+      return [];
+    }
+
+    if (!data) return [];
+
+    // Transform database rows to Memory interface
+    return data.map(transformDbRowToMemory);
+  } catch (error) {
+    console.error('Failed to load private memories:', error);
+    return [];
+  }
+};
+
+/**
+ * Load all memories (public + private for authenticated user)
+ * This is a convenience function that calls both loadPublicMemories and loadPrivateMemories
+ * @deprecated Consider using loadPublicMemories() and loadPrivateMemories() separately for better clarity
+ */
+export const loadMemories = async (userId: string | null = null): Promise<Memory[]> => {
+  try {
+    // Always load public memories (no auth required)
+    const publicMemories = await loadPublicMemories();
+
+    // Load private memories only if user is authenticated
+    const privateMemories = userId ? await loadPrivateMemories(userId) : [];
+
+    // Combine and return
+    return [...publicMemories, ...privateMemories];
   } catch (error) {
     console.error('Failed to load memories:', error);
     return [];

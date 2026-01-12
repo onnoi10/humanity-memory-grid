@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { BookOpen, Lightbulb, GraduationCap, AlertCircle, Download } from 'lucide-react';
 import { Memory } from '../types';
-import { loadMemories, exportMemories } from '../utils/storage';
+import { loadPublicMemories, loadPrivateMemories, exportMemories } from '../utils/storage';
 
 interface MemoriesProps {
   onNavigate: (page: string) => void;
@@ -30,15 +30,20 @@ export default function Memories({ onNavigate, user, refreshKey }: MemoriesProps
 
   useEffect(() => {
     const loadData = async () => {
-      const userId = user?.id ?? null;
-      const allMemories = await loadMemories(userId);
-      
-      // Separate memories by visibility
-      const publicMem = allMemories.filter(m => m.visibility === 'public');
-      const privateMem = allMemories.filter(m => m.visibility === 'private');
-      
+      // Load public memories (no authentication required)
+      // Query: SELECT * FROM memories WHERE visibility = 'public' ORDER BY timestamp DESC
+      const publicMem = await loadPublicMemories();
       setPublicMemories(publicMem);
-      setPrivateMemories(privateMem);
+
+      // Load private memories only if user is authenticated
+      // Query: SELECT * FROM memories WHERE visibility = 'private' AND user_id = $userId ORDER BY timestamp DESC
+      if (user?.id) {
+        const privateMem = await loadPrivateMemories(user.id);
+        setPrivateMemories(privateMem);
+      } else {
+        // Clear private memories if user is not authenticated
+        setPrivateMemories([]);
+      }
     };
 
     loadData();
