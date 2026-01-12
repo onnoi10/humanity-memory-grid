@@ -15,6 +15,17 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check for error parameters in URL hash (from email links)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const error = hashParams.get('error');
+    
+    if (error) {
+      // If there's an auth error, redirect to login page
+      setCurrentPage('login');
+      // Clean up URL
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);

@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -17,6 +17,29 @@ export default function Login({ onAuthSuccess }: LoginProps) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [emailSent, setEmailSent] = useState(false);
+
+  // Check for error parameters in URL hash (from email links)
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const error = hashParams.get('error');
+    const errorDescription = hashParams.get('error_description');
+    
+    if (error) {
+      let errorMessage = 'Authentication error occurred.';
+      
+      if (error === 'otp_expired') {
+        errorMessage = 'This link has expired. Please request a new password reset link.';
+        setMode('reset');
+      } else if (errorDescription) {
+        errorMessage = errorDescription.replace(/\+/g, ' ');
+      }
+      
+      setMessage({ type: 'error', text: errorMessage });
+      
+      // Clean up URL
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -57,7 +80,7 @@ export default function Login({ onAuthSuccess }: LoginProps) {
         });
       } else if (mode === 'reset') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: `${window.location.origin}${window.location.pathname}`,
         });
 
         if (error) throw error;
